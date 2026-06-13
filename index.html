@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>КНБ против компьютера</title>
+    <style>
+        button {
+            font-size: 2rem;
+            margin: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        #result {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Камень, ножницы, бумага</h1>
+    <button onclick="play('rock')">🪨 Камень</button>
+    <button onclick="play('paper')">📄 Бумага</button>
+    <button onclick="play('scissors')">✂️ Ножницы</button>
+    <div id="result">Нажми на любую кнопку</div>
+    <h2>Последние игры</h2>
+    <ul id="history"></ul>
+
+
+    <script type="module">
+        import { ConvexClient } from "https://esm.sh/convex@1/browser";
+
+        const convex = new ConvexClient("https://artful-kudu-355.eu-west-1.convex.site/");
+
+        // Функция для игры
+        window.play = async (choice) => {
+            try {
+                const result = await convex.mutation("game:play", { playerChoice: choice });
+                
+                const resultDiv = document.getElementById("result");
+                let message = "";
+                if (result.result === "win") message = "🎉 Вы выиграли!";
+                else if (result.result === "lose") message = "😞 Вы проиграли";
+                else message = "🤝 Ничья";
+                
+                resultDiv.innerHTML = `
+                    Вы выбрали: ${choice}<br>
+                    Компьютер выбрал: ${result.computerChoice}<br>
+                    <strong>${message}</strong>
+                `;
+				
+				await loadHistory();  // автоматически обновляем историю после хода
+				
+            } catch (error) {
+                console.error(error);
+                document.getElementById("result").innerHTML = "Ошибка! Смотрите консоль (F12)";
+            }
+        };
+
+        // Функция для загрузки истории (отдельно, не внутри play)
+        window.loadHistory = async () => {
+            const games = await convex.query("game:getLastGames");
+            const list = document.getElementById("history");
+            list.innerHTML = "";
+            for (const game of games) {
+                const li = document.createElement("li");
+                li.textContent = `${game.playerChoice} vs ${game.computerChoice} — ${game.result}`;
+                list.appendChild(li);
+            }
+        };
+		
+		// Загружаем историю при старте
+		loadHistory();
+
+    </script>
+</body>
+</html>
