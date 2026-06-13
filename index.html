@@ -7,7 +7,7 @@
     <style>
         body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; text-align: center; }
         button { font-size: 1.2rem; margin: 5px; padding: 8px 16px; cursor: pointer; }
-        #user-info { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 10px; border-radius: 8px; }
+        #user-info { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
         #balance { font-weight: bold; color: goldenrod; }
         #result { margin: 20px 0; padding: 10px; background: #e9ecef; border-radius: 8px; }
         ul { text-align: left; }
@@ -25,6 +25,13 @@
         const convexUrl = "https://artful-kudu-355.eu-west-1.convex.site";
         const convex = new ConvexClient(convexUrl);
 
+        // Компонент кнопки входа
+        function GoogleSignInButton() {
+            const { signIn } = useAuthActions();
+            return React.createElement('button', { onClick: () => signIn('google') }, '🔐 Войти через Google');
+        }
+
+        // Главный компонент приложения
         function MainApp() {
             const { isAuthenticated, isLoading } = useConvexAuth();
             const { signOut } = useAuthActions();
@@ -65,53 +72,46 @@
                 }
             }
 
-            if (isLoading) return <div>Загрузка...</div>;
+            if (isLoading) {
+                return React.createElement('div', null, 'Загрузка...');
+            }
 
             if (!isAuthenticated) {
-                return (
-                    <div>
-                        <h1>Камень, ножницы, бумага</h1>
-                        <GoogleSignInButton />
-                    </div>
+                return React.createElement('div', null,
+                    React.createElement('h1', null, 'Камень, ножницы, бумага'),
+                    React.createElement(GoogleSignInButton, null)
                 );
             }
 
-            return (
-                <div>
-                    <div id="user-info">
-                        <span>👤 {user?.tokenIdentifier?.slice(-8)}</span>
-                        <span>🪙 Баланс: <span id="balance">{user?.coins ?? 0}</span></span>
-                        <button onClick={() => signOut().then(() => window.location.reload())}>Выйти</button>
-                    </div>
-                    <h1>Сделайте ход</h1>
-                    <button onClick={() => handlePlay("rock")}>🪨 Камень</button>
-                    <button onClick={() => handlePlay("paper")}>📄 Бумага</button>
-                    <button onClick={() => handlePlay("scissors")}>✂️ Ножницы</button>
-                    {lastResult && <div id="result">{lastResult}</div>}
-                    <h2>История игр</h2>
-                    <ul>
-                        {games.map((g, idx) => (
-                            <li key={idx}>
-                                {g.playerChoice} vs {g.computerChoice} — {g.result === "win" ? "Победа" : g.result === "lose" ? "Поражение" : "Ничья"}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            return React.createElement('div', null,
+                React.createElement('div', { id: 'user-info' },
+                    React.createElement('span', null, `👤 ${user?.tokenIdentifier?.slice(-8) || 'Игрок'}`),
+                    React.createElement('span', null, '🪙 Баланс: ', React.createElement('span', { id: 'balance' }, user?.coins ?? 0)),
+                    React.createElement('button', { onClick: () => signOut().then(() => window.location.reload()) }, 'Выйти')
+                ),
+                React.createElement('h1', null, 'Сделайте ход'),
+                React.createElement('button', { onClick: () => handlePlay('rock') }, '🪨 Камень'),
+                React.createElement('button', { onClick: () => handlePlay('paper') }, '📄 Бумага'),
+                React.createElement('button', { onClick: () => handlePlay('scissors') }, '✂️ Ножницы'),
+                lastResult && React.createElement('div', { id: 'result' }, lastResult),
+                React.createElement('h2', null, 'История игр'),
+                React.createElement('ul', null,
+                    games.map((g, idx) => 
+                        React.createElement('li', { key: idx }, `${g.playerChoice} vs ${g.computerChoice} — ${g.result === 'win' ? 'Победа' : g.result === 'lose' ? 'Поражение' : 'Ничья'}`)
+                    )
+                )
             );
         }
 
-        function GoogleSignInButton() {
-            const { signIn } = useAuthActions();
-            return <button onClick={() => signIn("google")}>🔐 Войти через Google</button>;
-        }
-
+        // Корневой компонент с провайдером авторизации
         function App() {
             return React.createElement(ConvexAuthProvider, { client: convex },
-                React.createElement(MainApp)
+                React.createElement(MainApp, null)
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById("root"));
+        // Рендеринг в DOM
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(React.createElement(App));
     </script>
 </body>
